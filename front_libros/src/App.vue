@@ -1,6 +1,7 @@
 <script setup>
 import{ ref, onMounted } from 'vue';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const libros = ref([]);
 
@@ -26,9 +27,21 @@ const cargarLibro = async () => {
 const agregarLibro = async () => {
   if(editado.value){
     await axios.put(`http://localhost:8088/libro/editar-libro/${nuevoLibro.value.id}`, nuevoLibro.value);
+    Swal.fire({
+      icon: 'success',
+      title: 'Libro Actualizaso correctamente',
+      showConfirmButton: false,
+      timer: 1500
+    })
     editado.value = false
   }else{
     await axios.post('http://localhost:8088/libro/insertar-libro', nuevoLibro.value);
+    Swal.fire({
+      icon: 'success',
+      title: 'Libro agregado correctamente',
+      showConfirmButton: false,
+      timer: 1500
+    })
   }
 
   await cargarLibro();
@@ -48,9 +61,47 @@ const editarLibro = (lib) =>{
   editado.value = true
 }
 const eliminarLibro = async (id) => {
-  await axios.delete(`http://localhost:8088/libro/eliminar-libro/${id}`);
-  console.log('Libro Eliminado con id:', id);
-  await cargarLibro();
+
+  Swal.fire({
+    title: '¿Estas seguro de Eliminar el Libro',
+    text: "No podras revertir esto!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Si, Eliminarlo'
+  }).then(async (result) =>{
+    if (result.isConfirmed){
+      await eliminarLibroPorId(id);
+      Swal.fire(
+        'Eliminado!',
+        'El Libro ha sido Eliminado.',
+        'success'
+      )
+    }
+  })
+  
+}
+
+const eliminarLibroPorId = async (id) =>{
+  try{
+    await axios.delete(`http://localhost:8088/libro/eliminar-libro/${id}`);
+    Swal.fire({
+      icon: 'success',
+      title: 'Libro Eliminado Correctamente',
+      showConfirmButton: false,
+      timer: 1500
+    })
+    console.log('Libro Eliminado con id:', id);
+    await cargarLibro();
+  }catch (errr){
+    console.error('Error al Eliminalr Libro:', errr)
+    Swal.fire({
+      icon: 'error',
+      title: 'Errror al Eliminar Libro',
+      text: 'No se pudo Eliminar el Libro'
+    })
+  }
 }
 
 onMounted(cargarLibro);
